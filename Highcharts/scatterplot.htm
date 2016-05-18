@@ -1,0 +1,103 @@
+
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+		<script src="https://code.highcharts.com/highcharts.js"></script>
+		<script src="https://code.highcharts.com/highcharts-more.js"></script>
+
+	</head>
+	<body>
+		<div id="yeah" style="height: 600, width=1000px"></div>
+
+		<script>
+			// For explanation of method used, see: http://www.highcharts.com/docs/working-with-data/custom-preprocessing
+			var options = {
+				chart: {
+					type: 'bubble',
+					renderTo: 'yeah',
+					defaultSeriesType: 'bubble'
+				},
+				legend: {
+					enabled: false
+				},
+				title: {
+					text: ""
+				},
+				xAxis: {
+					title: {
+						text: "Income per person, $/year (GDP/capita)"
+					},
+					type: 'logarithmic',
+					minorTickInterval: 0.1
+				},
+				yAxis: {
+					title: {
+						text: "Life Expectancy, years"
+					}
+				},
+				tooltip: {
+					useHTML: true,
+					headerFormat: '<table>',
+					pointFormat: '<tr><th colspan="2"><h3>{point.name}</h3></th></tr>' +
+					'<tr><th>Income:</th><td>{point.x} $/year</td></tr>' +
+					'<tr><th>Life Expectancy:</th><td>{point.y} years</td></tr>' +
+					'<tr><th>Population:</th><td>{point.z}</td></tr>',
+					footerFormat: '</table>',
+					followPointer: true
+				},
+				series: []
+			}
+			$(function () {
+				var series = {
+					data: []
+				};
+				$.get('data.csv', function(data) {
+					// Split the lines
+					var lines = data.split('\n');
+
+					// Iterate over the lines and add series data
+					$.each(lines, function(lineNo, line) {
+						// skip header line
+						if (lineNo != 0) {
+							var items = line.split(',');
+
+							// Account for commas in name column, messes up Highcharts csv importing
+							if ( items.length > 4 ) {
+								var cutpoint = items.length - 4 + 1;
+								var newItems = [];
+								newItems[0] = items.slice(0, cutpoint).join("")
+								items = newItems.concat(items.slice(cutpoint, items.length))
+							}
+
+							// Initialize the point object
+							var point = { x: 0, y: 0, z: 0, name: "" };
+
+							$.each(items, function(itemNo, item) {
+								switch ( itemNo ) {
+									case 0:
+										point.name = item;
+									case 1:
+										point.x = Number(item);
+									case 2:
+										point.y = Number(item);
+									case 3:
+										point.z = Number(item);
+								}
+
+								// Add the point to the series data
+								series.data.push(point)
+							});
+						}
+					});
+
+					options.series.push(series);
+
+					// Create the chart
+					var chart = new Highcharts.Chart(options);
+				});
+			});
+		</script>
+	</body>
+</html>
